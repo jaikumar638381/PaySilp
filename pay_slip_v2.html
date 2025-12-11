@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>JKS Private Limited — Payslip Portal (Fixed)</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+  :root{ --accent:#0f172a; --accent-soft:#06b6d4; --muted:#6b7280; }
+  body{ font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; margin:0; background:linear-gradient(180deg,#f3f7fb,#ffffff); padding:28px; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .container-fixed{ width:100%; max-width:1100px; }
+
+  /* Login screen layout */
+  #loginScreen{ display:flex; gap:24px; align-items:flex-start; }
+  @media (max-width:980px){ #loginScreen{ flex-direction:column; } }
+
+  .brand-panel{ background:linear-gradient(135deg,var(--accent-soft),#2563eb); color:#fff; padding:28px; border-radius:14px; box-shadow:0 12px 40px rgba(15,23,42,0.08); width:420px; flex-shrink:0; }
+  .login-card{ background:#fff; padding:24px; border-radius:14px; box-shadow:0 10px 30px rgba(2,6,23,0.06); flex:1; }
+
+  /* App screen layout */
+  #appScreen{ display:none; }               /* hidden until login */
+  .app-header{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .app-actions{ margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+  /* Payslip box (A4-ready) */
+  #payslipBox{ background:#fff; padding:10mm; border:2mm solid #000; width:190mm; max-width:100%; border-radius:4px; box-sizing:border-box; }
+  .company-title{ text-align:center; font-weight:900; font-size:22px; text-transform:uppercase; margin-bottom:8px; color:#000; }
+  .company-sep{ width:60%; margin:0 auto 12px; border-top:2.5px solid #000; }
+
+  .logo-square{ width:56px; height:56px; border-radius:10px; background:linear-gradient(135deg,#06b6d4,#2563eb); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; }
+  .table-sm td,.table-sm th{ padding:.45rem; }
+  .numeric{ font-feature-settings:"tnum" 1; font-variant-numeric:tabular-nums; }
+  .amount-words{ font-style:italic; color:#0f172a; margin-top:6px; }
+
+  /* Print view: show only payslip */
+  @media print{
+    body *{ visibility:hidden; }
+    #payslipBox, #payslipBox *{ visibility:visible; }
+    #payslipBox{ position:fixed; left:0; top:0; width:100%; }
+  }
+
+  /* small screens tweaks */
+  @media (max-width:700px){
+    #payslipBox{ padding:10px; border-width:6px; }
+    .brand-panel{ width:100%; }
+    .login-card{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container-fixed">
+
+  <!-- LOGIN SCREEN (shown first) -->
+  <div id="loginScreen">
+    <div class="brand-panel" id="brandPanel">
+      <div style="font-weight:800; font-size:1.4rem;">JKS Private Limited</div>
+      <div style="margin-top:8px; opacity:0.95;">Secure employee portal — generate payslips quickly and professionally.</div>
+
+      <div style="display:flex; gap:10px; margin-top:18px;">
+        <div style="background:rgba(255,255,255,0.08); padding:10px; border-radius:8px; text-align:center; width:90px;">
+          <div style="font-weight:700">1.2K+</div><div style="font-size:.85rem">Payslips</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08); padding:10px; border-radius:8px; text-align:center; width:90px;">
+          <div style="font-weight:700">98%</div><div style="font-size:.85rem">Accuracy</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08); padding:10px; border-radius:8px; text-align:center; width:90px;">
+          <div style="font-weight:700">24/7</div><div style="font-size:.85rem">Access</div>
+        </div>
+      </div>
+
+      <div style="margin-top:18px; display:flex; gap:12px; align-items:center;">
+        <div style="width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-weight:700">J</div>
+        <div style="color:rgba(255,255,255,0.9);">Built for HR teams & small businesses — clean PDF-ready payslips with amount-in-words.</div>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <h4 style="font-weight:700; margin-bottom:6px;">Sign in to your account</h4>
+      <p class="text-muted small">Demo credentials: <strong>admin</strong> / <strong>admin123</strong> (client-side)</p>
+
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input id="loginUser" class="form-control" placeholder="Enter username" value="admin">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input id="loginPass" type="password" class="form-control" placeholder="Enter password" value="admin123">
+      </div>
+
+      <div class="d-grid gap-2">
+        <button id="loginBtn" class="btn btn-primary btn-lg">Sign in</button>
+      </div>
+    </div>
+  </div>
+  <!-- /loginScreen -->
+
+  <!-- APP SCREEN (hidden until login) -->
+  <div id="appScreen" style="display:none;">
+
+    <div class="app-header">
+      <div><div class="badge bg-light text-dark"><i class="bi bi-receipt-cutoff"></i> JKS Payslip</div></div>
+      <div style="font-weight:700; margin-left:8px;">JKS Private Limited — Employee Pay Slip</div>
+      <div class="app-actions">
+        <button id="logoutBtn" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-left"></i> Logout</button>
+        <button id="downloadPdf" class="btn btn-primary btn-sm"><i class="bi bi-download"></i> Download PDF</button>
+        <button id="printBtn" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer"></i> Print</button>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <!-- Left column: form (fills half width on large screens) -->
+      <div class="col-12 col-lg-6">
+        <div style="background:#fff; padding:18px; border-radius:10px; box-shadow:0 6px 18px rgba(2,6,23,0.04);">
+          <h6>Employee Details</h6>
+          <form id="empForm" onsubmit="return false;">
+            <div class="row g-2">
+              <div class="col-4"><label class="form-label">Emp. ID</label><input id="empId" class="form-control" value="E123"></div>
+              <div class="col-8"><label class="form-label">Full Name</label><input id="empName" class="form-control" value="John Doe"></div>
+              <div class="col-6"><label class="form-label">Mobile</label><input id="empMobile" class="form-control" value="+91 90000 00000"></div>
+              <div class="col-6"><label class="form-label">Email</label><input id="empEmail" class="form-control" value="john@example.com"></div>
+              <div class="col-6"><label class="form-label">Designation</label><input id="empDesig" class="form-control" value="Software Engineer"></div>
+              <div class="col-6"><label class="form-label">Department</label><input id="empDept" class="form-control" value="IT"></div>
+            </div>
+
+            <hr>
+            <h6>Salary & Allowances</h6>
+            <div class="row g-2">
+              <div class="col-12"><label class="form-label">Basic Salary (Monthly)</label><input id="basicSalary" class="form-control" type="number" value="30000"></div>
+              <div class="col-6"><label class="form-label">DA (% of Basic)</label><div class="input-group"><input id="daPercent" class="form-control" type="number" value="10"><span class="input-group-text">%</span></div></div>
+              <div class="col-6"><label class="form-label">HRA (% of Basic)</label><div class="input-group"><input id="hraPercent" class="form-control" type="number" value="20"><span class="input-group-text">%</span></div></div>
+              <div class="col-6"><label class="form-label">TA (Fixed)</label><input id="taAmount" class="form-control" type="number" value="1600"></div>
+              <div class="col-6"><label class="form-label">Other Allowance (Fixed)</label><input id="otherAllowance" class="form-control" type="number" value="500"></div>
+            </div>
+
+            <hr>
+            <h6>Deductions</h6>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label">PF (Fixed)</label><input id="pfAmount" class="form-control" type="number" value="3600"></div>
+              <div class="col-6"><label class="form-label">Professional Tax</label><input id="profTax" class="form-control" type="number" value="200"></div>
+              <div class="col-6"><label class="form-label">ESI (%)</label><div class="input-group"><input id="esiPercent" class="form-control" type="number" value="0"><span class="input-group-text">%</span></div></div>
+              <div class="col-6"><label class="form-label">Insurance</label><input id="insurance" class="form-control" type="number" value="0"></div>
+              <div class="col-6"><label class="form-label">TDS</label><input id="tds" class="form-control" type="number" value="0"></div>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px;">
+              <button id="calcBtn" class="btn btn-primary">Calculate</button>
+              <button id="resetBtn" class="btn btn-outline-secondary">Reset</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Right column: payslip preview -->
+      <div class="col-12 col-lg-6">
+        <div id="payslipBox">
+          <div class="company-title">JKS PRIVATE LIMITED</div>
+          <div class="company-sep"></div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="display:flex; gap:12px; align-items:center;">
+              <div class="logo-square">JKS</div>
+              <div>
+                <div style="font-weight:700">Employee Pay Slip</div>
+                <div class="small text-muted">Quality · Trust · Growth</div>
+              </div>
+            </div>
+            <div class="text-end">
+              <div class="small text-muted">Payslip for</div>
+              <strong id="rMonth">--</strong>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <div>
+              <div><strong id="rname">Name: -</strong></div>
+              <div class="small text-muted" id="rdesig">Designation: -</div>
+              <div class="small text-muted" id="rdept">Department: -</div>
+            </div>
+            <div class="text-end">
+              <div class="small text-muted">Employee ID</div>
+              <strong id="repid">-</strong>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px;">
+            <div style="flex:1;">
+              <table class="table table-sm table-bordered mb-0">
+                <thead><tr class="text-muted small"><th>Allowance</th><th class="text-end">Amount (₹)</th></tr></thead>
+                <tbody>
+                  <tr><td>Basic Salary</td><td class="text-end numeric" id="rBasic">0.00</td></tr>
+                  <tr><td>DA</td><td class="text-end numeric" id="rDA">0.00</td></tr>
+                  <tr><td>HRA</td><td class="text-end numeric" id="rHRA">0.00</td></tr>
+                  <tr><td>TA</td><td class="text-end numeric" id="rTA">0.00</td></tr>
+                  <tr><td>Other</td><td class="text-end numeric" id="rOther">0.00</td></tr>
+                  <tr class="table-active"><td><strong>Gross Salary</strong></td><td class="text-end numeric"><strong id="rGross">0.00</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="width:40%;">
+              <table class="table table-sm table-bordered mb-0">
+                <thead><tr class="text-muted small"><th>Deductions</th><th class="text-end">Amount (₹)</th></tr></thead>
+                <tbody>
+                  <tr><td>PF</td><td class="text-end numeric" id="rPF">0.00</td></tr>
+                  <tr><td>Prof. Tax</td><td class="text-end numeric" id="rProfTax">0.00</td></tr>
+                  <tr><td>ESI</td><td class="text-end numeric" id="rESI">0.00</td></tr>
+                  <tr><td>Insurance</td><td class="text-end numeric" id="rIns">0.00</td></tr>
+                  <tr><td>TDS</td><td class="text-end numeric" id="rTDS">0.00</td></tr>
+                  <tr class="table-active"><td><strong>Total Deductions</strong></td><td class="text-end numeric"><strong id="rTotalDed">0.00</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            <div>
+              <div class="small text-muted">Net Salary (Monthly)</div>
+              <h3 id="rNet">0.00</h3>
+              <div class="amount-words" id="rNetWords">Rupees Zero Only</div>
+            </div>
+            <div class="text-end">
+              <div>Generated on: <span id="rDate">-</span></div>
+              <div style="margin-top:8px;">Authorised Signatory</div>
+              <div style="height:36px;width:160px;border-bottom:1px solid rgba(0,0,0,0.12);margin-top:10px"></div>
+            </div>
+          </div>
+
+        </div> <!-- payslipBox -->
+      </div>
+    </div> <!-- row -->
+
+  </div> <!-- appScreen -->
+
+</div> <!-- container-fixed -->
+
+<!-- libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // --- Login behaviour ---
+  document.getElementById('loginBtn').addEventListener('click', function(){
+    const u = document.getElementById('loginUser').value.trim();
+    const p = document.getElementById('loginPass').value;
+    const ok = (u === 'admin' && p === 'admin123') || (u && p);
+    if(!ok){ alert('Login failed — try demo credentials admin / admin123'); return; }
+    // show app and hide login
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    // run initial calculation
+    calculate();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    document.getElementById('appScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+  });
+
+  // --- number to words (Indian) ---
+  function numberToWordsIndian(amount){
+    if(isNaN(amount)) return '';
+    amount = Number(amount).toFixed(2);
+    const [intStr, paiseStr] = amount.split('.');
+    let intPart = parseInt(intStr,10), paise = parseInt(paiseStr,10);
+    if(intPart===0 && paise===0) return 'Rupees Zero Only';
+    const words=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+    const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+    function twoDigit(n){ if(n<20) return words[n]; const t=Math.floor(n/10), r=n%10; return tens[t] + (r ? ' ' + words[r] : ''); }
+    function threeDigit(n){ const h=Math.floor(n/100), r=n%100; return (h? words[h] + ' Hundred' + (r? ' ' : '') : '') + (r? twoDigit(r) : ''); }
+    const parts = [];
+    const crores = Math.floor(intPart/10000000); if(crores) parts.push((crores<100? (crores<20? words[crores] : twoDigit(crores)) : threeDigit(crores)) + ' Crore');
+    intPart = intPart % 10000000;
+    const lakhs = Math.floor(intPart/100000); if(lakhs) parts.push((lakhs<100? (lakhs<20? words[lakhs] : twoDigit(lakhs)) : threeDigit(lakhs)) + ' Lakh');
+    intPart = intPart % 100000;
+    const thousands = Math.floor(intPart/1000); if(thousands) parts.push((thousands<100? (thousands<20? words[thousands] : twoDigit(thousands)) : threeDigit(thousands)) + ' Thousand');
+    intPart = intPart % 1000;
+    if(intPart) parts.push(threeDigit(intPart));
+    let res = parts.join(' ').trim(); if(!res) res='Zero';
+    if(paise) res += ' and ' + twoDigit(paise) + ' Paise';
+    return 'Rupees ' + res + ' Only';
+  }
+
+  function fmt(n){ return Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+  function calculate(){
+    const basic = parseFloat(document.getElementById('basicSalary').value) || 0;
+    const daPct = parseFloat(document.getElementById('daPercent').value) || 0;
+    const hraPct = parseFloat(document.getElementById('hraPercent').value) || 0;
+    const ta = parseFloat(document.getElementById('taAmount').value) || 0;
+    const other = parseFloat(document.getElementById('otherAllowance').value) || 0;
+    const pf = parseFloat(document.getElementById('pfAmount').value) || 0;
+    const profTax = parseFloat(document.getElementById('profTax').value) || 0;
+    const esiPct = parseFloat(document.getElementById('esiPercent').value) || 0;
+    const ins = parseFloat(document.getElementById('insurance').value) || 0;
+    const tds = parseFloat(document.getElementById('tds').value) || 0;
+
+    const daAmt = (daPct/100)*basic;
+    const hraAmt = (hraPct/100)*basic;
+    const esiAmt = (esiPct/100)*basic;
+    const gross = basic + daAmt + hraAmt + ta + other;
+    const totalDed = pf + profTax + esiAmt + ins + tds;
+    const net = gross - totalDed;
+
+    document.getElementById('rname').innerText = 'Name: ' + (document.getElementById('empName').value || '-');
+    document.getElementById('rdesig').innerText = 'Designation: ' + (document.getElementById('empDesig').value || '-');
+    document.getElementById('rdept').innerText = 'Department: ' + (document.getElementById('empDept').value || '-');
+    document.getElementById('repid').innerText = document.getElementById('empId').value || '-';
+
+    document.getElementById('rBasic').innerText = fmt(basic);
+    document.getElementById('rDA').innerText = fmt(daAmt) + (daPct?(' ('+daPct+' %)'):'');
+    document.getElementById('rHRA').innerText = fmt(hraAmt) + (hraPct?(' ('+hraPct+' %)'):'');
+    document.getElementById('rTA').innerText = fmt(ta);
+    document.getElementById('rOther').innerText = fmt(other);
+    document.getElementById('rGross').innerText = fmt(gross);
+
+    document.getElementById('rPF').innerText = fmt(pf);
+    document.getElementById('rProfTax').innerText = fmt(profTax);
+    document.getElementById('rESI').innerText = fmt(esiAmt) + (esiPct?(' ('+esiPct+' %)'):'');
+    document.getElementById('rIns').innerText = fmt(ins);
+    document.getElementById('rTDS').innerText = fmt(tds);
+    document.getElementById('rTotalDed').innerText = fmt(totalDed);
+
+    document.getElementById('rNet').innerText = fmt(net);
+    document.getElementById('rNetWords').innerText = numberToWordsIndian(net);
+    document.getElementById('rDate').innerText = new Date().toLocaleString();
+
+    const now = new Date();
+    document.getElementById('rMonth').innerText = now.toLocaleString('default',{month:'long', year:'numeric'});
+
+    return {gross, totalDed, net};
+  }
+
+  // handlers
+  document.getElementById('calcBtn').addEventListener('click', ()=> calculate());
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    document.getElementById('empForm').reset();
+    document.getElementById('basicSalary').value = 30000;
+    document.getElementById('daPercent').value = 10;
+    document.getElementById('hraPercent').value = 20;
+    document.getElementById('taAmount').value = 1600;
+    document.getElementById('otherAllowance').value = 500;
+    document.getElementById('pfAmount').value = 3600;
+    document.getElementById('profTax').value = 200;
+    document.getElementById('esiPercent').value = 0;
+    document.getElementById('insurance').value = 0;
+    document.getElementById('tds').value = 0;
+    calculate();
+  });
+
+  // PDF download (single A4)
+  document.getElementById('downloadPdf').addEventListener('click', async ()=>{
+    calculate();
+    const element = document.getElementById('payslipBox');
+    const opt = {
+      margin: [8,8,8,8],
+      filename: (document.getElementById('empId').value || 'payslip') + '_' + (new Date().toISOString().slice(0,10)) + '.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS:true, logging:false, windowWidth: element.scrollWidth },
+      jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+      pagebreak: { mode:['css','legacy'] }
+    };
+    const prevW = element.style.width || '';
+    element.style.width = '190mm';
+    try{ await html2pdf().set(opt).from(element).save(); }
+    catch(e){ console.error(e); alert('PDF generation failed — try Print as fallback.'); }
+    finally{ element.style.width = prevW; }
+  });
+
+  document.getElementById('printBtn').addEventListener('click', ()=>{ calculate(); window.print(); });
+
+  // initial small calculate so preview isn't empty
+  window.addEventListener('load', ()=> calculate());
+</script>
+
+</body>
+</html>
